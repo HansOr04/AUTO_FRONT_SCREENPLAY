@@ -53,7 +53,6 @@ public class TransactionStepDefinitions {
                 ((org.openqa.selenium.JavascriptExecutor) drv).executeScript(
                     "window.localStorage.clear(); window.sessionStorage.clear();");
             } catch (Exception ignored) {
-                // continue
             }
             usuarioRegistrado = true;
         }

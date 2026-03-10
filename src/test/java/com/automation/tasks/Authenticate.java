@@ -55,18 +55,15 @@ public class Authenticate implements Task {
             Click.on(BudgetManagementUi.LOGIN_BUTTON)
         );
 
-        // Esperar a que la URL cambie a /dashboard (polling)
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .until(ExpectedConditions.urlContains("/dashboard"));
 
-        // Esperar a que el reload de la app termine
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         }
 
-        // Confirmar que seguimos en dashboard después del reload
         new WebDriverWait(driver, Duration.ofSeconds(15))
             .until(ExpectedConditions.urlContains("/dashboard"));
     }
