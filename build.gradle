@@ -1,0 +1,53 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "net.serenity-bdd:serenity-gradle-plugin:4.2.22"
+        classpath "net.serenity-bdd:serenity-single-page-report:4.2.22"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'net.serenity-bdd.serenity-gradle-plugin'
+
+group = 'com.automation'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    serenity_version = '4.2.22'
+}
+
+dependencies {
+    testImplementation "net.serenity-bdd:serenity-core:${serenity_version}"
+    testImplementation "net.serenity-bdd:serenity-cucumber:${serenity_version}"
+    testImplementation "net.serenity-bdd:serenity-screenplay-webdriver:${serenity_version}"
+    testImplementation 'io.cucumber:cucumber-java:7.15.0'
+    testImplementation 'io.cucumber:cucumber-junit:7.15.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'io.github.bonigarcia:webdrivermanager:5.6.3'
+    testImplementation 'org.slf4j:slf4j-simple:2.0.9'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
+}
+
+test {
+    systemProperty 'cucumber.filter.tags', System.getProperty('cucumber.filter.tags', '')
+    systemProperty 'test.email', System.getProperty('test.email', '')
+    systemProperty 'test.password', System.getProperty('test.password', '')
+}
+
+serenity {
+    reports = ['single-page-html']
+}
+
+gradle.startParameter.continueOnFailure = true
