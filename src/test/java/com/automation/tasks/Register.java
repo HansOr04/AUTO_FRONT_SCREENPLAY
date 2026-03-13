@@ -6,11 +6,14 @@ import net.serenitybdd.screenplay.Task;
 import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.actions.Enter;
 import net.serenitybdd.screenplay.actions.Open;
-import net.serenitybdd.screenplay.annotations.Step;
+import net.serenitybdd.annotations.Step;
 import net.serenitybdd.screenplay.waits.WaitUntil;
 
 import static net.serenitybdd.screenplay.Tasks.instrumented;
 import static net.serenitybdd.screenplay.matchers.WebElementStateMatchers.isVisible;
+
+import net.thucydides.model.environment.SystemEnvironmentVariables;
+import net.thucydides.model.util.EnvironmentVariables;
 
 public class Register implements Task {
 
@@ -31,8 +34,11 @@ public class Register implements Task {
     @Override
     @Step("{0} registers a new account")
     public <T extends Actor> void performAs(T actor) {
+        EnvironmentVariables environmentVariables = SystemEnvironmentVariables.createEnvironmentVariables();
+        String baseUrl = environmentVariables.getProperty("webdriver.base.url", "http://localhost:3000");
+
         actor.attemptsTo(
-            Open.url("/register"),
+            Open.url(baseUrl + "/register"),
             WaitUntil.the(BudgetManagementUi.DISPLAY_NAME_INPUT, isVisible())
                      .forNoMoreThan(30).seconds(),
             Enter.theValue(nombre).into(BudgetManagementUi.DISPLAY_NAME_INPUT),

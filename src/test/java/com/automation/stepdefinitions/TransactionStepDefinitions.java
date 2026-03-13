@@ -29,9 +29,9 @@ public class TransactionStepDefinitions {
 
     private final EnvironmentVariables env = SystemEnvironmentVariables.createEnvironmentVariables();
 
-    private String testEmail;
-    private String testPassword;
-    private String testName;
+    private static String testEmail;
+    private static String testPassword;
+    private static String testName;
     private static volatile boolean usuarioRegistrado = false;
 
     private Actor usuario() {
@@ -41,10 +41,12 @@ public class TransactionStepDefinitions {
     @Before(order = 0)
     public void prepararEscenario() {
         OnStage.setTheStage(new OnlineCast());
-        testEmail = env.getProperty("test.credentials.email",
-                        "testuser_" + System.currentTimeMillis() + "@example.com");
-        testPassword = env.getProperty("test.credentials.password", "Password123!");
-        testName = env.getProperty("test.credentials.name", "Test User");
+        if (testEmail == null) {
+            testEmail = env.getProperty("test.credentials.email",
+                            "testuser_" + System.currentTimeMillis() + "@example.com");
+            testPassword = env.getProperty("test.credentials.password", "Password123!");
+            testName = env.getProperty("test.credentials.name", "Test User");
+        }
     }
 
     @Before(order = 1)
