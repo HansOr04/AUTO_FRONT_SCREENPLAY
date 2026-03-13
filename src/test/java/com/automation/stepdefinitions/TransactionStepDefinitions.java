@@ -1,5 +1,8 @@
 package com.automation.stepdefinitions;
 
+import com.automation.interactions.ClearBrowserState;
+import com.automation.questions.CurrentUrl;
+import com.automation.questions.DashboardVisibility;
 import com.automation.questions.TransactionVisibility;
 import com.automation.tasks.Authenticate;
 import com.automation.tasks.CreateTransaction;
@@ -14,24 +17,21 @@ import io.cucumber.java.es.Dado;
 import io.cucumber.java.es.Entonces;
 import io.cucumber.java.es.Y;
 import net.serenitybdd.screenplay.Actor;
-import net.serenitybdd.screenplay.abilities.BrowseTheWeb;
 import net.serenitybdd.screenplay.actors.OnStage;
 import net.serenitybdd.screenplay.actors.OnlineCast;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
+import net.thucydides.model.environment.SystemEnvironmentVariables;
+import net.thucydides.model.util.EnvironmentVariables;
 
 import static net.serenitybdd.screenplay.GivenWhenThen.seeThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
 
 public class TransactionStepDefinitions {
 
-    private static final String TEST_EMAIL = "testuser_" + System.currentTimeMillis() + "@example.com";
-    private static final String TEST_PASSWORD = "Password123!";
-    private static final String TEST_NAME = "Test User";
+    private final EnvironmentVariables env = SystemEnvironmentVariables.createEnvironmentVariables();
+
+    private String testEmail;
+    private String testPassword;
+    private String testName;
     private static volatile boolean usuarioRegistrado = false;
 
     private Actor usuario() {
@@ -41,17 +41,20 @@ public class TransactionStepDefinitions {
     @Before(order = 0)
     public void prepararEscenario() {
         OnStage.setTheStage(new OnlineCast());
+        testEmail = env.getProperty("test.credentials.email",
+                        "testuser_" + System.currentTimeMillis() + "@example.com");
+        testPassword = env.getProperty("test.credentials.password", "Password123!");
+        testName = env.getProperty("test.credentials.name", "Test User");
     }
 
     @Before(order = 1)
     public void registrarUsuario() {
         if (!usuarioRegistrado) {
             try {
-                usuario().attemptsTo(Register.withCredentials(TEST_NAME, TEST_EMAIL, TEST_PASSWORD));
-                org.openqa.selenium.WebDriver drv = BrowseTheWeb.as(usuario()).getDriver();
-                drv.manage().deleteAllCookies();
-                ((org.openqa.selenium.JavascriptExecutor) drv).executeScript(
-                    "window.localStorage.clear(); window.sessionStorage.clear();");
+                usuario().attemptsTo(
+                    Register.withCredentials(testName, testEmail, testPassword)
+                );
+                usuario().attemptsTo(ClearBrowserState.now());
             } catch (Exception ignored) {
             }
             usuarioRegistrado = true;
@@ -59,71 +62,59 @@ public class TransactionStepDefinitions {
     }
 
     @Dado("el usuario se encuentra en la página de inicio de sesión")
-    public void elUsuarioSeEncuentraEnLaPáginaDeInicioDeSesión() {
+    public void elUsuarioSeEncuentraEnLaPaginaDeInicioDeSesion() {
         usuario().attemptsTo(NavigateToLogin.page());
     }
 
     @Cuando("el usuario ingresa sus credenciales válidas")
-    public void elUsuarioIngresaSusCredencialesVálidas() {
-        usuario().attemptsTo(Authenticate.withCredentials(TEST_EMAIL, TEST_PASSWORD));
+    public void elUsuarioIngresaSusCredencialesValidas() {
+        usuario().attemptsTo(Authenticate.withCredentials(testEmail, testPassword));
     }
 
     @Entonces("el usuario es redirigido al dashboard principal")
     public void elUsuarioEsRedirigidoAlDashboardPrincipal() {
-        WebDriver driver = BrowseTheWeb.as(usuario()).getDriver();
-        boolean enDashboard = new WebDriverWait(driver, Duration.ofSeconds(15))
-            .until(ExpectedConditions.urlContains("/dashboard"));
-        assertTrue("El usuario debería estar en el dashboard", enDashboard);
+        usuario().should(seeThat(DashboardVisibility.isDisplayed(), is(true)));
     }
 
     @Dado("el usuario ha iniciado sesión en la aplicación")
-    public void elUsuarioHaIniciadoSesiónEnLaAplicación() {
-        usuario().attemptsTo(Authenticate.withCredentials(TEST_EMAIL, TEST_PASSWORD));
+    public void elUsuarioHaIniciadoSesionEnLaAplicacion() {
+        usuario().attemptsTo(Authenticate.withCredentials(testEmail, testPassword));
     }
 
     @Cuando("el usuario navega a la sección de transacciones")
-    public void elUsuarioNavegaALaSecciónDeTransacciones() {
+    public void elUsuarioNavegaALaSeccionDeTransacciones() {
         usuario().attemptsTo(NavigateToTransactions.fromSidebar());
     }
 
     @Y("el usuario crea una transacción con descripción {string} y monto {string}")
-    public void elUsuarioCreaUnaTransacciónConDescripciónYMonto(String descripcion, String monto) {
+    public void elUsuarioCreaUnaTransaccionConDescripcionYMonto(String descripcion, String monto) {
         usuario().attemptsTo(CreateTransaction.with(descripcion, monto));
     }
 
     @Entonces("la transacción {string} aparece en el listado")
-    public void laTransacciónApareceEnElListado(String descripcion) {
+    public void laTransaccionApareceEnElListado(String descripcion) {
         usuario().should(seeThat(TransactionVisibility.of(descripcion), is(true)));
     }
 
     @Cuando("el usuario navega a la sección de reportes")
-    public void elUsuarioNavegaALaSecciónDeReportes() {
+    public void elUsuarioNavegaALaSeccionDeReportes() {
         usuario().attemptsTo(NavigateToReports.fromSidebar());
     }
 
     @Entonces("el sistema muestra el resumen financiero")
     public void elSistemaMuestraElResumenFinanciero() {
-        WebDriver driver = BrowseTheWeb.as(usuario()).getDriver();
-        boolean enReportes = new WebDriverWait(driver, Duration.ofSeconds(15))
-            .until(ExpectedConditions.urlContains("/dashboard"));
-        assertTrue("El usuario debería estar en la sección de reportes", enReportes);
+        usuario().should(seeThat(
+            CurrentUrl.containsPath("/dashboard"), is(true)));
     }
 
     @Cuando("el usuario cierra su sesión desde el menú de usuario")
-    public void elUsuarioCierraSuSesiónDesdeElMenúDeUsuario() {
+    public void elUsuarioCierraSuSesionDesdeElMenuDeUsuario() {
         usuario().attemptsTo(Logout.fromUserMenu());
     }
 
     @Entonces("el usuario es redirigido a la página de inicio de sesión")
-    public void elUsuarioEsRedirigidoALaPáginaDeInicioDeSesión() {
-        WebDriver driver = BrowseTheWeb.as(usuario()).getDriver();
-        boolean enLogin = new WebDriverWait(driver, Duration.ofSeconds(15))
-            .until(d -> {
-                String url = d.getCurrentUrl();
-                return url.contains("/login") ||
-                       url.equals("http://localhost:3000/") ||
-                       url.equals("http://localhost:3000");
-            });
-        assertTrue("El usuario debería estar en la página de login", enLogin);
+    public void elUsuarioEsRedirigidoALaPaginaDeInicioDeSesion() {
+        usuario().should(seeThat(
+            CurrentUrl.containsPath("/login"), is(true)));
     }
 }
